@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { useContext } from "react";
@@ -9,7 +9,9 @@ export default function Chat() {
   const [onlinePeople, setOnlinePeople] = useState({});
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [newMessageText, setNewMessageText] = useState("");
+  const [messages, setMessages] = useState([])
   const { username, id } = useContext(UserContext);
+  const divUnderMessgaes = useRef()
   // console.log(username, id);
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:3000");
@@ -27,24 +29,43 @@ export default function Chat() {
   }
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
+    console.log({ev,messageData});
     if ("online" in messageData) {
       showOnlinePeople(messageData.online);
+    } else if ('text' in messageData) {
+      // console.log({messageData});
+      setMessages(prev => ([...prev, {...messageData}]))
     }
-    // console.log(messageData);
+    
   }
   function sendMessage(ev) {
     ev.preventDefault();
     ws.send(
       JSON.stringify({
-        message: {
-          recipient: selectedUserId,
+         recipient: selectedUserId,
           text: newMessageText,
-        },
-      })
-    );
+      }));
+    setNewMessageText('')
+    setMessages(prev => ([...prev, {
+      text: newMessageText,
+      sender: id,
+      recipient: selectedUserId,
+      id: Date.now(),
+    }]));
+    // const div = divUnderMessgaes.current;
+    // div.scrollIntoView({behavior: 'smooth', block: 'end'})
   }
+  useEffect(() => {
+    const div = divUnderMessgaes.current;
+    if (div) {
+      div.scrollIntoView({behavior: 'smooth', block: 'end'})
+    }
+    
+  })
   const onlinePeopleExclOurUser = { ...onlinePeople };
   delete onlinePeopleExclOurUser[id];
+
+  const messagesWiuthoutDupes = uniqBy(messages, 'id')
 
   return (
     <div className="flex h-screen">
@@ -78,6 +99,24 @@ export default function Chat() {
                 &larr; Select contact from sidebar
               </div>
             </div>
+          )}
+          {!!selectedUserId && (
+            
+            <div className="relative h-full ">
+            <div  className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-2">
+              {messagesWiuthoutDupes.map(message => (
+                <div className={(message.sender === id ? 'text-right' : 'text-left')}>
+                <div className={"text-left inline-block p-2 m-y-2 rounded-md text-sm " + (message.sender === id  ? 'bg-blue-500 text-white' : 'bg-white text-gray-500')}>
+                  sender: {message.sender} <br />
+                  my id : {id} <br />
+                 {message.text}
+                  </div>
+                  </div>
+              ))}
+                <div ref={divUnderMessgaes}></div>
+                </div>
+                </div>
+              
           )}
         </div>
         {!!selectedUserId && (
