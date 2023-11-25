@@ -3,6 +3,7 @@ import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { useContext } from "react";
 import { UserContext } from "./UserContext";
+import { connect } from "mongoose";
 
 export default function Chat() {
   const [ws, setWs] = useState(null);
@@ -14,11 +15,20 @@ export default function Chat() {
   const divUnderMessgaes = useRef()
   // console.log(username, id);
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:3000");
-    console.log(ws);
-    setWs(ws);
-    ws.addEventListener("message", handleMessage);
+   connectToWs()
   }, []);
+  function connectToWs() {
+     const ws = new WebSocket("ws://localhost:3000");
+    //console.log(ws);
+    setWs(ws);
+     ws.addEventListener("message", handleMessage);
+    ws.addEventListener('close', () => {
+      setTimeout(() => {
+        console.log('Disconnected, Tryibg to reconnect.');
+        connectToWs()
+      }, 1000)
+    });
+  }
   function showOnlinePeople(peopleArray) {
     const people = {};
     peopleArray.forEach(({ userId, username }) => {
@@ -50,7 +60,7 @@ export default function Chat() {
       text: newMessageText,
       sender: id,
       recipient: selectedUserId,
-      id: Date.now(),
+      _id: Date.now(),
     }]));
     // const div = divUnderMessgaes.current;
     // div.scrollIntoView({behavior: 'smooth', block: 'end'})
@@ -61,11 +71,20 @@ export default function Chat() {
       div.scrollIntoView({behavior: 'smooth', block: 'end'})
     }
     
-  })
+  }, [messages])
+
+  useEffect(() => {
+    if (selectedUserId) {
+      axios.get('/messages/' + selectedUserId).then(res => {
+        setMessages(res.data)
+       })
+    }
+  }, [selectedUserId])
+
   const onlinePeopleExclOurUser = { ...onlinePeople };
   delete onlinePeopleExclOurUser[id];
 
-  const messagesWiuthoutDupes = uniqBy(messages, 'id')
+  const messagesWiuthoutDupes = uniqBy(messages, '_id')
 
   return (
     <div className="flex h-screen">
@@ -84,7 +103,7 @@ export default function Chat() {
               <div className="w-1 bg-blue-500 h-12 rounded-r-md"></div>
             )}
             <div className="flex  gap-2 py-2 pl-4 items center">
-              <Avatar username={onlinePeople[userId]} userId={userId} />
+              <Avatar online={true} username={onlinePeople[userId]} userId={userId} />
               <span className="text-grey-800">{onlinePeople[userId]}</span>
             </div>
           </div>
@@ -105,10 +124,9 @@ export default function Chat() {
             <div className="relative h-full ">
             <div  className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-2">
               {messagesWiuthoutDupes.map(message => (
-                <div className={(message.sender === id ? 'text-right' : 'text-left')}>
+                <div key={message._id} className={(message.sender === id ? 'text-right' : 'text-left')}>
                 <div className={"text-left inline-block p-2 m-y-2 rounded-md text-sm " + (message.sender === id  ? 'bg-blue-500 text-white' : 'bg-white text-gray-500')}>
-                  sender: {message.sender} <br />
-                  my id : {id} <br />
+               
                  {message.text}
                   </div>
                   </div>
