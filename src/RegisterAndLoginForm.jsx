@@ -5,7 +5,7 @@ import { UserContext } from "./UserContext.jsx";
 export const RegisterAndLoginForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoginOrRegister, setIsLoginOrRegister] = useState("register");
+  const [isLoginOrRegister, setIsLoginOrRegister] = useState("login");
   const { setUsername: setLoggedInUsername, setId } = useContext(UserContext);
 
   async function handleSubmit(ev) {
@@ -61,7 +61,7 @@ export const RegisterAndLoginForm = () => {
           {isLoginOrRegister === "login" && (
             <div>
               Dont have an Account?{" "}
-              <button onClick={() => setIsLoginOrRegister("register")}>
+              <button className="ml-1" onClick={() => setIsLoginOrRegister("register")}>
                 Register
               </button>{" "}
             </div>
