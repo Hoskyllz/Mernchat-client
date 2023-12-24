@@ -5,6 +5,7 @@ import { useContext } from "react";
 import { UserContext } from "./UserContext";
 import {uniqBy} from "lodash"
 import { connect } from "mongoose";
+import mongoose from "mongoose";
 import axios from "axios";
 import Contact from "./Contact"
 
